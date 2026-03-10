@@ -1,10 +1,31 @@
 import { CONFIG } from './config';
 import type { Diagnosis, SearchResult, DiagnosisDetail, PostcoordinationModule } from '../types';
 
-let cachedToken: string | null = null;
+interface TokenData {
+  accessToken: string;
+  expiresAt: number;
+}
+
+let cachedToken: TokenData | null = null;
+let tokenRequestPromise: Promise<string> | null = null;
 
 async function getToken(): Promise<string> {
-  if (cachedToken) return cachedToken;
+  if (cachedToken && cachedToken.expiresAt > Date.now()) {
+    return cachedToken.accessToken;
+  }
+
+  if (tokenRequestPromise) {
+    return tokenRequestPromise;
+  }
+
+  tokenRequestPromise = fetchToken();
+  return tokenRequestPromise;
+}
+
+async function fetchToken(): Promise<string> {
+  if (!CONFIG.clientId || !CONFIG.clientSecret) {
+    throw new Error('OAuth credentials not configured. Set VITE_CLIENT_ID and VITE_CLIENT_SECRET environment variables.');
+  }
 
   const params = new URLSearchParams({
     grant_type: 'client_credentials',
@@ -21,26 +42,48 @@ async function getToken(): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new Error(`Auth failed: ${response.status}`);
+    const errorBody = await parseErrorResponse(response);
+    throw new Error(`Auth failed: ${response.status} - ${errorBody}`);
   }
 
   const data = await response.json();
-  cachedToken = data.access_token;
-  return cachedToken!;
+  const expiresIn = data.expires_in || 3600;
+  
+  cachedToken = {
+    accessToken: data.access_token,
+    expiresAt: Date.now() + (expiresIn * 1000),
+  };
+  
+  tokenRequestPromise = null;
+  return cachedToken.accessToken;
+}
+
+async function parseErrorResponse(response: Response): Promise<string> {
+  try {
+    const errorData = await response.json();
+    return errorData.error_description || errorData.error || response.statusText;
+  } catch {
+    return response.statusText;
+  }
 }
 
 function getHeaders(): HeadersInit {
+  const token = cachedToken?.accessToken;
   return {
-    'Authorization': `Bearer ${cachedToken}`,
+    'Authorization': token ? `Bearer ${token}` : '',
     'API-Version': CONFIG.apiVersion,
-    'Accept-Language': 'en',
+    'Accept-Language': CONFIG.defaultLanguage,
   };
+}
+
+function clearToken(): void {
+  cachedToken = null;
 }
 
 export async function searchDiagnoses(query: string): Promise<Diagnosis[]> {
   await getToken();
   
-  const url = `${CONFIG.apiBaseUrl}/release/11/${CONFIG.releaseVersion}/mms/search?q=${encodeURIComponent(query)}`;
+  const url = `${CONFIG.apiBaseUrl}/${CONFIG.releaseId}/${CONFIG.releaseVersion}/mms/search?q=${encodeURIComponent(query)}`;
   
   const response = await fetch(url, {
     headers: getHeaders(),
@@ -48,10 +91,11 @@ export async function searchDiagnoses(query: string): Promise<Diagnosis[]> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      cachedToken = null;
+      clearToken();
       return searchDiagnoses(query);
     }
-    throw new Error(`Search failed: ${response.status}`);
+    const errorBody = await parseErrorResponse(response);
+    throw new Error(`Search failed: ${response.status} - ${errorBody}`);
   }
 
   const data: SearchResult = await response.json();
@@ -69,10 +113,11 @@ export async function getDiagnosisDetail(id: string): Promise<DiagnosisDetail> {
 
   if (!response.ok) {
     if (response.status === 401) {
-      cachedToken = null;
+      clearToken();
       return getDiagnosisDetail(id);
     }
-    throw new Error(`Get detail failed: ${response.status}`);
+    const errorBody = await parseErrorResponse(response);
+    throw new Error(`Get detail failed: ${response.status} - ${errorBody}`);
   }
 
   return response.json();
@@ -89,10 +134,11 @@ export async function getPostcoordinationOptions(id: string): Promise<Postcoordi
 
   if (!response.ok) {
     if (response.status === 401) {
-      cachedToken = null;
+      clearToken();
       return getPostcoordinationOptions(id);
     }
-    throw new Error(`Get postcoordination failed: ${response.status}`);
+    const errorBody = await parseErrorResponse(response);
+    throw new Error(`Get postcoordination failed: ${response.status} - ${errorBody}`);
   }
 
   const data = await response.json();
