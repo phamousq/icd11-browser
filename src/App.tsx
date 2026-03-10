@@ -1,9 +1,42 @@
-function App() {
+import { AppProvider, useApp } from './context/AppContext';
+import { Layout } from './components/Layout/Layout';
+import { SearchBar } from './components/SearchBar/SearchBar';
+import { ResultsList } from './components/ResultsList/ResultsList';
+import { DiagnosisDetail } from './components/DiagnosisDetail/DiagnosisDetail';
+import { Postcoordination } from './components/Postcoordination/Postcoordination';
+import './App.css';
+
+function AppContent() {
+  const { error, clearError, isLoading } = useApp();
+
+  const sidebar = (
+    <>
+      <SearchBar />
+      <ResultsList />
+    </>
+  );
+
   return (
-    <div className="app">
-      <h1>ICD-11 Learning Browser</h1>
-    </div>
-  )
+    <Layout sidebar={sidebar}>
+      {error && (
+        <div className="error-banner">
+          <span>{error}</span>
+          <button onClick={clearError}>Dismiss</button>
+        </div>
+      )}
+      {isLoading && <div className="loading-bar">Loading...</div>}
+      <DiagnosisDetail />
+      <Postcoordination />
+    </Layout>
+  );
 }
 
-export default App
+function App() {
+  return (
+    <AppProvider>
+      <AppContent />
+    </AppProvider>
+  );
+}
+
+export default App;
