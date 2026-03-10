@@ -1,5 +1,5 @@
 import { useApp } from '../../context/AppContext';
-import { getDiagnosisDetail, getPostcoordinationOptions } from '../../api/icdApi';
+import { getDiagnosisDetail, getPostcoordinationOptions, getChapterInfo } from '../../api/icdApi';
 import type { Diagnosis } from '../../types';
 import './ResultsList.css';
 
@@ -36,16 +36,24 @@ export function ResultsList() {
 
   return (
     <div className="results-list">
-      {searchResults.map((result) => (
-        <div
-          key={result.id}
-          className={`result-item ${selectedDiagnosis?.id === result.id ? 'selected' : ''}`}
-          onClick={() => handleSelect(result)}
-        >
-          <span className="result-code">{result.code}</span>
-          <span className="result-title">{result.title}</span>
-        </div>
-      ))}
+      {searchResults.map((result) => {
+        const chapterInfo = getChapterInfo(result.code);
+        return (
+          <div
+            key={result.id}
+            className={`result-item ${selectedDiagnosis?.id === result.id ? 'selected' : ''}`}
+            onClick={() => handleSelect(result)}
+          >
+            <div className="result-main">
+              <span className="result-code">{result.code}</span>
+              <span className="result-title">{result.title}</span>
+            </div>
+            {chapterInfo && (
+              <span className="result-chapter">Ch. {chapterInfo.chapterCode}</span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

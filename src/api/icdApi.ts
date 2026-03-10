@@ -1,5 +1,6 @@
 import { CONFIG } from './config';
-import type { Diagnosis, SearchResult, DiagnosisDetail, PostcoordinationModule } from '../types';
+import type { Diagnosis, SearchResult, DiagnosisDetail, PostcoordinationModule, ChapterInfo, RelatedDiagnosis } from '../types';
+import { ICD_CHAPTERS } from '../types';
 
 interface TokenData {
   accessToken: string;
@@ -152,6 +153,8 @@ export async function searchDiagnoses(query: string): Promise<Diagnosis[]> {
     stemId: entity.stemId || entity.id,
     code: entity.theCode || '',
     title: stripHtml(extractString(entity.title)),
+    chapter: entity.chapter,
+    isLeaf: entity.isLeaf,
   }));
 }
 
@@ -185,6 +188,12 @@ export async function getDiagnosisDetail(idOrUrl: string): Promise<DiagnosisDeta
     exclusion: extractStrings(data.exclusion),
     synonym: extractStrings(data.synonym),
     parent: data.parent,
+    child: data.child,
+    classKind: data.classKind,
+    chapter: extractChapterCode(data.code),
+    block: extractBlockCode(data.code),
+    relatedEntitiesInMaternalChapter: data.relatedEntitiesInMaternalChapter,
+    relatedEntitiesInPerinatalChapter: data.relatedEntitiesInPerinatalChapter,
     postcoordinationScale: data.postcoordinationScale,
   };
 }
@@ -242,4 +251,167 @@ export async function getPostcoordinationOptions(id: string): Promise<Postcoordi
   }
 
   return modules;
+}
+
+// Extract chapter code from ICD code (e.g., "5A11" -> "05")
+function extractChapterCode(code: string): string | undefined {
+  if (!code) return undefined;
+  
+  // Handle letter + numbers format (e.g., "5A11", "NC32")
+  const match = code.match(/^([A-Z]?)(\d+)/i);
+  if (match) {
+    const letter = match[1] || '';
+    const num = match[2];
+    
+    // If starts with letter (extension codes), return 'X'
+    if (letter && letter.toUpperCase() !== letter.toLowerCase()) {
+      return letter.toUpperCase() === 'X' ? 'X' : '26';
+    }
+    
+    // Pad to 2 digits for chapter lookup
+    const numStr = num.substring(0, 2);
+    return numStr.padStart(2, '0');
+  }
+  
+  return undefined;
+}
+
+// Extract block code from ICD code (e.g., "5A14" -> "5A")
+function extractBlockCode(code: string): string | undefined {
+  if (!code) return undefined;
+  
+  // Extract the block prefix (first 1-2 characters that identify the block)
+  const match = code.match(/^[A-Z]?\d+[A-Z]?/i);
+  return match ? match[0].toUpperCase() : undefined;
+}
+
+export function getChapterInfo(code: string): ChapterInfo | undefined {
+  const chapterCode = extractChapterCode(code);
+  const blockCode = extractBlockCode(code);
+  
+  if (!chapterCode) return undefined;
+  
+  return {
+    chapterCode,
+    chapterTitle: ICD_CHAPTERS[chapterCode] || 'Unknown Chapter',
+    blockCode,
+  };
+}
+
+export async function getParentDiagnoses(parentUrls: string[]): Promise<RelatedDiagnosis[]> {
+  const parents: RelatedDiagnosis[] = [];
+  
+  for (const parentUrl of parentUrls || []) {
+    try {
+      const detail = await getDiagnosisDetail(parentUrl);
+      parents.push({
+        id: detail.id,
+        code: detail.code,
+        title: detail.title,
+        relationship: 'parent',
+      });
+    } catch {
+      // Skip failed parent lookups
+    }
+  }
+  
+  return parents;
+}
+
+export async function getChildDiagnoses(childUrls: string[]): Promise<RelatedDiagnosis[]> {
+  const children: RelatedDiagnosis[] = [];
+  
+  for (const childUrl of childUrls || []) {
+    try {
+      const detail = await getDiagnosisDetail(childUrl);
+      children.push({
+        id: detail.id,
+        code: detail.code,
+        title: detail.title,
+        relationship: 'child',
+      });
+    } catch {
+      // Skip failed child lookups
+    }
+  }
+  
+  return children;
+}
+
+export async function getRelatedFromChapter(code: string, currentId: string): Promise<RelatedDiagnosis[]> {
+  const chapterInfo = getChapterInfo(code);
+  if (!chapterInfo) return [];
+  
+  // Search for diagnoses in the same chapter
+  const chapterNum = parseInt(chapterInfo.chapterCode);
+  if (isNaN(chapterNum) || chapterNum < 1 || chapterNum > 28) return [];
+  
+  // Try different search patterns to find chapter diagnoses
+  const searchPatterns = [
+    `chapter ${chapterInfo.chapterCode}`,
+    chapterInfo.chapterTitle.split(' ')[0].toLowerCase(),
+  ];
+  
+  const allResults: RelatedDiagnosis[] = [];
+  const seenIds = new Set<string>();
+  seenIds.add(currentId);
+  
+  for (const pattern of searchPatterns) {
+    try {
+      const results = await searchDiagnoses(pattern);
+      for (const result of results.slice(0, 10)) {
+        if (!seenIds.has(result.id)) {
+          seenIds.add(result.id);
+          const resultChapter = extractChapterCode(result.code);
+          if (resultChapter === chapterInfo.chapterCode) {
+            allResults.push({
+              id: result.id,
+              code: result.code,
+              title: result.title,
+              relationship: 'chapter',
+            });
+          }
+        }
+      }
+    } catch {
+      // Continue to next pattern
+    }
+  }
+  
+  return allResults.slice(0, 10);
+}
+
+export async function getAllRelatedDiagnoses(diagnosisId: string): Promise<RelatedDiagnosis[]> {
+  const detail = await getDiagnosisDetail(diagnosisId);
+  const related: RelatedDiagnosis[] = [];
+  const seenIds = new Set<string>();
+  
+  // Add parents
+  const parents = await getParentDiagnoses(detail.parent || []);
+  for (const p of parents) {
+    if (!seenIds.has(p.id)) {
+      seenIds.add(p.id);
+      related.push(p);
+    }
+  }
+  
+  // Add children
+  const children = await getChildDiagnoses(detail.child || []);
+  for (const c of children) {
+    if (!seenIds.has(c.id)) {
+      seenIds.add(c.id);
+      related.push(c);
+    }
+  }
+  
+  // Add chapter siblings
+  const chapterSiblings = await getRelatedFromChapter(detail.code, diagnosisId);
+  for (const s of chapterSiblings) {
+    if (!seenIds.has(s.id)) {
+      seenIds.add(s.id);
+      related.push(s);
+    }
+  }
+  
+  return related;
 }

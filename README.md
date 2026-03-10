@@ -6,12 +6,13 @@ A web application for learning and exploring the ICD-11 (International Classific
 
 - **Search** - Search ICD-11 diagnoses with debounced API calls
 - **Browse** - View diagnosis details including code, fully specified name, synonyms, and exclusions
+- **Chapter Navigation** - Explore related diagnoses in the same chapter, parent categories, and more specific diagnoses
 - **Postcoordination** - Form-based module selection to add details to base diagnoses
 - **ICD-11 Cluster Coding** - Proper ICD-11 syntax with stem codes and extension codes joined by `&`
 - **Conflict Detection** - Automatically prevents incompatible combinations (e.g., Simple + Open fracture)
 - **Click to Copy** - Click the cluster code box to copy to clipboard
 - **Plain English** - All text displayed in understandable English
-- **Color-coded UI** - Blue for stem codes, green for extension codes
+- **Color-coded UI** - Blue for stem codes, green for extension codes, purple for chapters
 
 ## ICD-11 Cluster Coding Syntax
 
@@ -62,22 +63,36 @@ The built files will be in the `dist` directory.
 src/
 ├── api/
 │   ├── config.ts        # API configuration
-│   └── icdApi.ts        # API calls and token management
+│   └── icdApi.ts       # API calls, token management, chapter/related functions
 ├── components/
-│   ├── DiagnosisDetail/ # Diagnosis detail display
+│   ├── ChapterNav/      # Chapter navigation & related diagnoses
+│   ├── DiagnosisDetail/  # Diagnosis detail display
 │   ├── Layout/          # App layout
 │   ├── Postcoordination/# Postcoordination form & preview
-│   ├── ResultsList/     # Search results list
+│   ├── ResultsList/     # Search results list with chapter badges
 │   └── SearchBar/       # Search input
 ├── context/
 │   └── AppContext.tsx   # Global state management
 ├── hooks/
 │   └── useDebounce.ts   # Debounce hook
 ├── types/
-│   └── index.ts         # TypeScript interfaces
+│   └── index.ts         # TypeScript interfaces, ICD-11 chapter mapping
 ├── App.tsx
 └── main.tsx
 ```
+
+## Chapter Navigation
+
+The app helps users navigate ICD-11 hierarchy:
+
+- **Search Results** - Show chapter badge for each diagnosis
+- **Diagnosis Detail** - Shows chapter and block information in header
+- **Related Diagnoses Panel** - Three expandable sections:
+  - **Parent Categories** - Navigate up the hierarchy
+  - **More Specific** - Navigate down to child diagnoses
+  - **Same Chapter** - Browse related diagnoses in the same chapter
+
+This guides users to find the most specific diagnosis code for their needs.
 
 ## API
 

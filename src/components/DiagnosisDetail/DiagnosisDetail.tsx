@@ -1,4 +1,6 @@
 import { useApp } from '../../context/AppContext';
+import { getChapterInfo } from '../../api/icdApi';
+import { ChapterNav } from '../ChapterNav/ChapterNav';
 import './DiagnosisDetail.css';
 
 function toString(value: unknown): string {
@@ -24,6 +26,7 @@ export function DiagnosisDetail() {
 
   const exclusions = selectedDiagnosis.exclusion?.map(toString).filter(Boolean) || [];
   const synonyms = selectedDiagnosis.synonym?.map(toString).filter(Boolean) || [];
+  const chapterInfo = getChapterInfo(selectedDiagnosis.code);
 
   return (
     <div className="diagnosis-detail">
@@ -33,6 +36,12 @@ export function DiagnosisDetail() {
         </div>
         <h1 className="diagnosis-title">{toString(selectedDiagnosis.title)}</h1>
         <p className="diagnosis-id">ID: {selectedDiagnosis.id}</p>
+        {chapterInfo && (
+          <div className="diagnosis-chapter">
+            <span className="chapter-label">Chapter {chapterInfo.chapterCode}</span>
+            <span className="chapter-name">{chapterInfo.chapterTitle}</span>
+          </div>
+        )}
       </header>
 
       {selectedDiagnosis.fullySpecifiedName && (
@@ -63,6 +72,8 @@ export function DiagnosisDetail() {
           </ul>
         </section>
       )}
+
+      <ChapterNav variant="detail" />
     </div>
   );
 }

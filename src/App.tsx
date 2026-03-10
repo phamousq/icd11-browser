@@ -4,6 +4,7 @@ import { SearchBar } from './components/SearchBar/SearchBar';
 import { ResultsList } from './components/ResultsList/ResultsList';
 import { DiagnosisDetail } from './components/DiagnosisDetail/DiagnosisDetail';
 import { Postcoordination } from './components/Postcoordination/Postcoordination';
+import { ChapterNav } from './components/ChapterNav/ChapterNav';
 import './App.css';
 
 function AppContent() {
@@ -13,6 +14,7 @@ function AppContent() {
     <>
       <SearchBar />
       <ResultsList />
+      <ChapterNav variant="sidebar" />
     </>
   );
 

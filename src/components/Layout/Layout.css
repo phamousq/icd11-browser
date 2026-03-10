@@ -12,6 +12,22 @@
   overflow: hidden;
 }
 
+.sidebar > *:first-child {
+  flex-shrink: 0;
+}
+
+.sidebar > *:nth-child(2) {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.sidebar > *:nth-child(3) {
+  flex-shrink: 0;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
 .main-content {
   flex: 1;
   padding: 24px;
