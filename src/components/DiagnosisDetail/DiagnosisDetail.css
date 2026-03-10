@@ -1,0 +1,65 @@
+.diagnosis-detail {
+  max-width: 800px;
+}
+
+.diagnosis-detail-empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-secondary);
+}
+
+.diagnosis-detail-empty h2 {
+  color: var(--color-text);
+  margin-bottom: 12px;
+}
+
+.diagnosis-header {
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.diagnosis-code {
+  display: inline-block;
+  font-family: monospace;
+  font-size: 18px;
+  color: var(--color-base);
+  font-weight: 600;
+  background: rgba(37, 99, 235, 0.1);
+  padding: 4px 12px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.diagnosis-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.diagnosis-section {
+  margin-bottom: 24px;
+}
+
+.diagnosis-section h2 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+
+.diagnosis-section p {
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.diagnosis-section ul {
+  list-style: disc;
+  padding-left: 24px;
+}
+
+.diagnosis-section li {
+  margin-bottom: 4px;
+}
