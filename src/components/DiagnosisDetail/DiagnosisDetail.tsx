@@ -16,8 +16,8 @@ export function DiagnosisDetail() {
   if (!selectedDiagnosis) {
     return (
       <div className="diagnosis-detail-empty">
-        <h2>Welcome to ICD-11 Learning Browser</h2>
-        <p>Search for a diagnosis on the left to see details and explore postcoordination options.</p>
+        <h2>ICD-11 Learning Browser</h2>
+        <p>Search for a diagnosis to view details and explore postcoordination options.</p>
       </div>
     );
   }
@@ -28,21 +28,24 @@ export function DiagnosisDetail() {
   return (
     <div className="diagnosis-detail">
       <header className="diagnosis-header">
-        <span className="diagnosis-code">{selectedDiagnosis.code}</span>
+        <div className="icd-code-badge">
+          <span className="icd-code">{selectedDiagnosis.code}</span>
+        </div>
         <h1 className="diagnosis-title">{toString(selectedDiagnosis.title)}</h1>
+        <p className="diagnosis-id">ID: {selectedDiagnosis.id}</p>
       </header>
 
       {selectedDiagnosis.fullySpecifiedName && (
         <section className="diagnosis-section">
           <h2>Fully Specified Name</h2>
-          <p>{toString(selectedDiagnosis.fullySpecifiedName)}</p>
+          <p className="fully-specified">{toString(selectedDiagnosis.fullySpecifiedName)}</p>
         </section>
       )}
 
       {synonyms.length > 0 && (
         <section className="diagnosis-section">
           <h2>Synonyms</h2>
-          <ul>
+          <ul className="synonyms-list">
             {synonyms.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
@@ -51,9 +54,9 @@ export function DiagnosisDetail() {
       )}
 
       {exclusions.length > 0 && (
-        <section className="diagnosis-section">
+        <section className="diagnosis-section exclusions">
           <h2>Excludes</h2>
-          <ul>
+          <ul className="exclusions-list">
             {exclusions.map((item, i) => (
               <li key={i}>{item}</li>
             ))}

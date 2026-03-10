@@ -7,35 +7,41 @@
   padding: 24px 16px;
   text-align: center;
   color: var(--color-text-secondary);
+  font-size: 14px;
 }
 
 .result-item {
-  padding: 12px 16px;
+  padding: 14px 16px;
   border-bottom: 1px solid var(--color-border);
   cursor: pointer;
-  transition: background-color 0.15s;
+  transition: all 0.15s ease;
 }
 
 .result-item:hover {
-  background-color: var(--color-bg);
+  background-color: #EFF6FF;
 }
 
 .result-item.selected {
-  background-color: rgba(37, 99, 235, 0.08);
-  border-left: 3px solid var(--color-base);
+  background-color: rgba(37, 99, 235, 0.1);
+  border-left: 4px solid var(--color-base);
+  padding-left: 12px;
 }
 
 .result-code {
-  display: block;
-  font-family: monospace;
-  font-size: 14px;
-  color: var(--color-base);
+  display: inline-block;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 13px;
   font-weight: 600;
+  color: #fff;
+  background: #2563EB;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
 }
 
 .result-title {
-  display: block;
+  display: inline;
   font-size: 14px;
   color: var(--color-text);
-  margin-top: 4px;
+  line-height: 1.4;
 }

@@ -15,26 +15,41 @@
 
 .diagnosis-header {
   margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--color-border);
 }
 
-.diagnosis-code {
-  display: inline-block;
+.icd-code-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.icd-code {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%);
+  padding: 6px 14px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+}
+
+.diagnosis-id {
   font-family: monospace;
-  font-size: 18px;
-  color: var(--color-base);
-  font-weight: 600;
-  background: rgba(37, 99, 235, 0.1);
-  padding: 4px 12px;
-  border-radius: 4px;
-  margin-bottom: 8px;
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  word-break: break-all;
 }
 
 .diagnosis-title {
-  font-size: 28px;
+  font-size: 26px;
   font-weight: 600;
   color: var(--color-text);
+  line-height: 1.4;
 }
 
 .diagnosis-section {
@@ -42,24 +57,65 @@
 }
 
 .diagnosis-section h2 {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-text-secondary);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: 8px;
+  letter-spacing: 0.8px;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .diagnosis-section p {
   font-size: 16px;
   line-height: 1.7;
+  color: var(--color-text);
 }
 
-.diagnosis-section ul {
-  list-style: disc;
-  padding-left: 24px;
+.fully-specified {
+  font-style: italic;
+  color: #374151;
+  background: #F3F4F6;
+  padding: 12px 16px;
+  border-left: 3px solid var(--color-base);
+  border-radius: 0 6px 6px 0;
 }
 
-.diagnosis-section li {
-  margin-bottom: 4px;
+.synonyms-list,
+.exclusions-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.synonyms-list li,
+.exclusions-list li {
+  font-size: 15px;
+  padding: 8px 12px;
+  margin-bottom: 6px;
+  background: #F9FAFB;
+  border-radius: 4px;
+  border-left: 3px solid var(--color-border);
+}
+
+.synonyms-list li {
+  border-left-color: #6B7280;
+}
+
+.exclusions {
+  background: #FEF2F2;
+  padding: 16px;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.exclusions h2 {
+  color: #991B1B;
+}
+
+.exclusions-list li {
+  background: #FEF2F2;
+  border-left-color: #DC2626;
+  color: #7F1D1D;
 }
