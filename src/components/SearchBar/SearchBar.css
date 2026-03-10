@@ -1,6 +1,7 @@
 .search-bar {
   padding: 16px;
   border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 .search-input {

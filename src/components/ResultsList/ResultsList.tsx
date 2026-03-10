@@ -1,23 +1,22 @@
 import { useApp } from '../../context/AppContext';
 import { getDiagnosisDetail, getPostcoordinationOptions } from '../../api/icdApi';
-import type { DiagnosisDetail } from '../../types';
+import type { Diagnosis } from '../../types';
 import './ResultsList.css';
 
 export function ResultsList() {
-  const { searchResults, selectedDiagnosis, setSelectedDiagnosis, setPostcoordinationModules, setIsLoading, setError } = useApp();
+  const { searchResults, selectedDiagnosis, setSelectedDiagnosis, setPostcoordinationModules, clearPostcoordinationSelections, setIsLoading, setError } = useApp();
 
-  async function handleSelect(diagnosis: DiagnosisDetail) {
+  async function handleSelect(diagnosis: Diagnosis) {
     setIsLoading(true);
     try {
-      const detail = await getDiagnosisDetail(diagnosis.id);
+      const detail = await getDiagnosisDetail(diagnosis.stemId);
       setSelectedDiagnosis(detail);
+      clearPostcoordinationSelections();
       
-      // Fetch postcoordination options
       try {
-        const modules = await getPostcoordinationOptions(diagnosis.id);
+        const modules = await getPostcoordinationOptions(diagnosis.stemId);
         setPostcoordinationModules(modules);
       } catch {
-        // Some diagnoses don't have postcoordination
         setPostcoordinationModules([]);
       }
     } catch (err) {

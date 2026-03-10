@@ -2,28 +2,41 @@ export interface Diagnosis {
   id: string;
   code: string;
   title: string;
-  description?: string;
-  parentId?: string;
-  childCount?: number;
+  stemId: string;
 }
 
 export interface SearchResult {
-  destination?: string;
-  result?: Diagnosis[];
+  destinationEntities: Diagnosis[];
+  error?: string;
 }
 
-export interface DiagnosisDetail extends Diagnosis {
-  inclusion?: string[];
+export interface DiagnosisDetail {
+  id: string;
+  code: string;
+  title: string;
+  stemId: string;
+  fullySpecifiedName?: string;
   exclusion?: string[];
-  children?: Diagnosis[];
-  postcoordination?: PostcoordinationModule[];
+  synonym?: string[];
+  parent?: string;
+  postcoordinationScale?: PostcoordinationScale[];
+}
+
+export interface PostcoordinationScale {
+  '@id': string;
+  axisName: string;
+  requiredPostcoordination: string;
+  allowMultipleValues: string;
+  scaleEntity: string[];
 }
 
 export interface PostcoordinationModule {
   id: string;
   title: string;
-  description?: string;
-  allowedValues?: PostcoordinationValue[];
+  axisName: string;
+  required: boolean;
+  allowMultiple: boolean;
+  allowedValues: PostcoordinationValue[];
 }
 
 export interface PostcoordinationValue {

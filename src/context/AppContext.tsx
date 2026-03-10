@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import type { Diagnosis, DiagnosisDetail, PostcoordinationModule, PostcoordinationSelection } from '../types';
 
 interface AppState {
@@ -18,6 +18,7 @@ interface AppContextType extends AppState {
   setPostcoordinationModules: (modules: PostcoordinationModule[]) => void;
   addPostcoordinationSelection: (selection: PostcoordinationSelection) => void;
   removePostcoordinationSelection: (moduleId: string) => void;
+  clearPostcoordinationSelections: () => void;
   setIsLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
   clearError: () => void;
@@ -36,21 +37,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     error: null,
   });
 
-  const setSearchQuery = (query: string) => setState(s => ({ ...s, searchQuery: query }));
-  const setSearchResults = (results: Diagnosis[]) => setState(s => ({ ...s, searchResults: results }));
-  const setSelectedDiagnosis = (diagnosis: DiagnosisDetail | null) => setState(s => ({ ...s, selectedDiagnosis: diagnosis }));
-  const setPostcoordinationModules = (modules: PostcoordinationModule[]) => setState(s => ({ ...s, postcoordinationModules: modules }));
-  const addPostcoordinationSelection = (selection: PostcoordinationSelection) => setState(s => ({ 
+  const setSearchQuery = useCallback((query: string) => setState(s => ({ ...s, searchQuery: query })), []);
+  const setSearchResults = useCallback((results: Diagnosis[]) => setState(s => ({ ...s, searchResults: results })), []);
+  const setSelectedDiagnosis = useCallback((diagnosis: DiagnosisDetail | null) => setState(s => ({ ...s, selectedDiagnosis: diagnosis })), []);
+  const setPostcoordinationModules = useCallback((modules: PostcoordinationModule[]) => setState(s => ({ ...s, postcoordinationModules: modules })), []);
+  const addPostcoordinationSelection = useCallback((selection: PostcoordinationSelection) => setState(s => ({ 
     ...s, 
     postcoordinationSelections: [...s.postcoordinationSelections.filter(p => p.moduleId !== selection.moduleId), selection] 
-  }));
-  const removePostcoordinationSelection = (moduleId: string) => setState(s => ({ 
+  })), []);
+  const removePostcoordinationSelection = useCallback((moduleId: string) => setState(s => ({ 
     ...s, 
     postcoordinationSelections: s.postcoordinationSelections.filter(p => p.moduleId !== moduleId) 
-  }));
-  const setIsLoading = (loading: boolean) => setState(s => ({ ...s, isLoading: loading }));
-  const setError = (error: string | null) => setState(s => ({ ...s, error }));
-  const clearError = () => setState(s => ({ ...s, error: null }));
+  })), []);
+  const clearPostcoordinationSelections = useCallback(() => setState(s => ({ 
+    ...s, 
+    postcoordinationSelections: [] 
+  })), []);
+  const setIsLoading = useCallback((loading: boolean) => setState(s => ({ ...s, isLoading: loading })), []);
+  const setError = useCallback((error: string | null) => setState(s => ({ ...s, error })), []);
+  const clearError = useCallback(() => setState(s => ({ ...s, error: null })), []);
 
   return (
     <AppContext.Provider value={{
@@ -61,6 +66,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setPostcoordinationModules,
       addPostcoordinationSelection,
       removePostcoordinationSelection,
+      clearPostcoordinationSelections,
       setIsLoading,
       setError,
       clearError,

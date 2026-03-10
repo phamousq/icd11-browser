@@ -80,6 +80,50 @@ function clearToken(): void {
   cachedToken = null;
 }
 
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, '');
+}
+
+function extractString(value: unknown): string {
+  if (typeof value === 'string') {
+    return value;
+  }
+  if (value && typeof value === 'object') {
+    const obj = value as Record<string, unknown>;
+    // Handle { "@value": "..." } or { "label": { "@value": "..." } }
+    if ('@value' in obj) {
+      return String(obj['@value']);
+    }
+    if ('label' in obj && typeof obj.label === 'object') {
+      const labelObj = obj.label as Record<string, unknown>;
+      if ('@value' in labelObj) {
+        return String(labelObj['@value']);
+      }
+    }
+    if ('value' in obj) {
+      return String(obj.value);
+    }
+    return JSON.stringify(value);
+  }
+  return String(value || '');
+}
+
+function extractStrings(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.map(extractString).filter(Boolean);
+  }
+  if (value && typeof value === 'object') {
+    return [extractString(value)].filter(Boolean);
+  }
+  return [];
+}
+
+function extractIdFromUrl(url: string): string {
+  // Handle URLs like: http://id.who.int/icd/release/11/2026-01/mms/1697306310/other
+  const match = url.match(/\/mms\/([^/]+)/);
+  return match ? match[1] : url.split('/').pop() || url;
+}
+
 export async function searchDiagnoses(query: string): Promise<Diagnosis[]> {
   await getToken();
   
@@ -99,13 +143,23 @@ export async function searchDiagnoses(query: string): Promise<Diagnosis[]> {
   }
 
   const data: SearchResult = await response.json();
-  return data.result || [];
+  if (!data.destinationEntities) {
+    return [];
+  }
+
+  return data.destinationEntities.map((entity) => ({
+    id: entity.id,
+    stemId: entity.stemId || entity.id,
+    code: entity.theCode || '',
+    title: stripHtml(extractString(entity.title)),
+  }));
 }
 
-export async function getDiagnosisDetail(id: string): Promise<DiagnosisDetail> {
+export async function getDiagnosisDetail(idOrUrl: string): Promise<DiagnosisDetail> {
   await getToken();
   
-  const url = `${CONFIG.apiBaseUrl}/entity/${id}`;
+  const id = extractIdFromUrl(idOrUrl);
+  const url = `${CONFIG.apiBaseUrl}/${CONFIG.releaseId}/${CONFIG.releaseVersion}/mms/${id}`;
   
   const response = await fetch(url, {
     headers: getHeaders(),
@@ -120,27 +174,72 @@ export async function getDiagnosisDetail(id: string): Promise<DiagnosisDetail> {
     throw new Error(`Get detail failed: ${response.status} - ${errorBody}`);
   }
 
-  return response.json();
+  const data = await response.json();
+  
+  return {
+    id: data['@id'] || data.id || id,
+    stemId: data['@id'] || id,
+    code: data.code || '',
+    title: extractString(data.title),
+    fullySpecifiedName: extractString(data.fullySpecifiedName),
+    exclusion: extractStrings(data.exclusion),
+    synonym: extractStrings(data.synonym),
+    parent: data.parent,
+    postcoordinationScale: data.postcoordinationScale,
+  };
 }
 
 export async function getPostcoordinationOptions(id: string): Promise<PostcoordinationModule[]> {
-  await getToken();
+  const detail = await getDiagnosisDetail(id);
   
-  const url = `${CONFIG.apiBaseUrl}/entity/${id}/postcoordination`;
-  
-  const response = await fetch(url, {
-    headers: getHeaders(),
-  });
-
-  if (!response.ok) {
-    if (response.status === 401) {
-      clearToken();
-      return getPostcoordinationOptions(id);
-    }
-    const errorBody = await parseErrorResponse(response);
-    throw new Error(`Get postcoordination failed: ${response.status} - ${errorBody}`);
+  if (!detail.postcoordinationScale || detail.postcoordinationScale.length === 0) {
+    return [];
   }
 
-  const data = await response.json();
-  return data.module || [];
+  const modules: PostcoordinationModule[] = [];
+
+  for (const scale of detail.postcoordinationScale) {
+    const moduleId = extractIdFromUrl(scale['@id']);
+    
+    const allowedValuesRaw = await Promise.all(
+      scale.scaleEntity.map(async (entityUrl) => {
+        try {
+          const entityDetail = await getDiagnosisDetail(extractIdFromUrl(entityUrl));
+          return {
+            value: extractIdFromUrl(entityUrl),
+            label: entityDetail.title,
+          };
+        } catch {
+          return {
+            value: extractIdFromUrl(entityUrl),
+            label: extractIdFromUrl(entityUrl),
+          };
+        }
+      })
+    );
+
+    // Deduplicate by value
+    const seen = new Set<string>();
+    const allowedValues = allowedValuesRaw.filter(v => {
+      if (seen.has(v.value)) return false;
+      seen.add(v.value);
+      return true;
+    });
+
+    // Use module index to ensure unique IDs if duplicates exist
+    const uniqueModuleId = modules.length > 0 && modules.some(m => m.id === moduleId) 
+      ? `${moduleId}_${modules.length}` 
+      : moduleId;
+
+    modules.push({
+      id: uniqueModuleId,
+      title: extractIdFromUrl(scale.axisName).replace('has', ''),
+      axisName: scale.axisName,
+      required: scale.requiredPostcoordination === 'true',
+      allowMultiple: scale.allowMultipleValues === 'AllowAlways',
+      allowedValues,
+    });
+  }
+
+  return modules;
 }

@@ -1,6 +1,15 @@
 import { useApp } from '../../context/AppContext';
 import './DiagnosisDetail.css';
 
+function toString(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value && typeof value === 'object') {
+    const obj = value as { '@value'?: string; value?: string; label?: string };
+    return obj['@value'] || obj.value || obj.label || JSON.stringify(value);
+  }
+  return String(value || '');
+}
+
 export function DiagnosisDetail() {
   const { selectedDiagnosis } = useApp();
 
@@ -13,36 +22,39 @@ export function DiagnosisDetail() {
     );
   }
 
+  const exclusions = selectedDiagnosis.exclusion?.map(toString).filter(Boolean) || [];
+  const synonyms = selectedDiagnosis.synonym?.map(toString).filter(Boolean) || [];
+
   return (
     <div className="diagnosis-detail">
       <header className="diagnosis-header">
         <span className="diagnosis-code">{selectedDiagnosis.code}</span>
-        <h1 className="diagnosis-title">{selectedDiagnosis.title}</h1>
+        <h1 className="diagnosis-title">{toString(selectedDiagnosis.title)}</h1>
       </header>
 
-      {selectedDiagnosis.description && (
+      {selectedDiagnosis.fullySpecifiedName && (
         <section className="diagnosis-section">
-          <h2>Description</h2>
-          <p>{selectedDiagnosis.description}</p>
+          <h2>Fully Specified Name</h2>
+          <p>{toString(selectedDiagnosis.fullySpecifiedName)}</p>
         </section>
       )}
 
-      {selectedDiagnosis.inclusion && selectedDiagnosis.inclusion.length > 0 && (
+      {synonyms.length > 0 && (
         <section className="diagnosis-section">
-          <h2>Includes</h2>
+          <h2>Synonyms</h2>
           <ul>
-            {selectedDiagnosis.inclusion.map((item, i) => (
+            {synonyms.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ul>
         </section>
       )}
 
-      {selectedDiagnosis.exclusion && selectedDiagnosis.exclusion.length > 0 && (
+      {exclusions.length > 0 && (
         <section className="diagnosis-section">
           <h2>Excludes</h2>
           <ul>
-            {selectedDiagnosis.exclusion.map((item, i) => (
+            {exclusions.map((item, i) => (
               <li key={i}>{item}</li>
             ))}
           </ul>

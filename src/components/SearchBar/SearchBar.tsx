@@ -26,6 +26,7 @@ export function SearchBar() {
           setSearchResults(results);
         }
       } catch (err) {
+        console.error('Search error:', err);
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Search failed');
         }
